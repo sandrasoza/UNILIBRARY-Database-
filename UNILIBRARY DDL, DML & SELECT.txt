@@ -1,0 +1,494 @@
+/* UNILIBRARY Database
+User (uID, uFirstName, uLastName, uEmail, uPhone)     
+Author (aID, aFirstName, aLastName)
+Publisher (pubID, pubName, pubAddress, pubWebsite, pubNumber)            
+Book (bookID, bEdition, bISBN, bTitle, pubYear, pubID)
+Writes (aID, bookID) 
+bookCopy (copyID, purchDtCopy, copyStatus, bookID)
+bookLoan (loanID, checkoutDate, dueDate, copyID, uID)
+Fine (fineID, fineAmount, fineDate, reason, fineStatus, loanID)
+Payment (payID, payAmount, payDate, payType, uID, fineID)
+*/
+
+DROP TABLE IF EXISTS "User" CASCADE;
+DROP TABLE IF EXISTS Author CASCADE;
+DROP TABLE IF EXISTS Publisher CASCADE;
+DROP TABLE IF EXISTS Book CASCADE;
+DROP TABLE IF EXISTS Writes CASCADE;
+DROP TABLE IF EXISTS bookCopy CASCADE;
+DROP TABLE IF EXISTS bookLoan CASCADE;
+DROP TABLE IF EXISTS Fine CASCADE;
+DROP TABLE IF EXISTS Payment CASCADE;
+
+CREATE TABLE "User"(
+	uID varchar(20) primary key, 
+	uFirstName varchar(25) not null, 
+	uLastName varchar(25) not null, 
+	uEmail varchar(200) unique not null, 
+	uPhone varchar(15) not null
+); 
+CREATE TABLE Author( 
+	aID varchar(10) primary key, 
+	aFirstName varchar(25) not null, 
+	aLastName varchar(25) not null 
+); 
+CREATE TABLE Publisher(
+	pubID varchar(10) primary key, 
+	pubName varchar(100) not null, 
+	pubAddress varchar(200) not null, 
+	pubWebsite varchar(150) not null, 
+	pubNumber varchar(20) not null
+); 
+CREATE TABLE Book(
+	bookID varchar(15) primary key,   
+	bEdition varchar(20),   
+	bISBN varchar(13) unique not null check (bISBN ~ '^[0-9]{10}$|^[0-9]{13}$'),   
+	bTitle varchar(200) not null,   
+	pubYear	 integer check (pubYear > 0),   
+	pubID varchar(10) not null ,     
+	foreign key (pubID) references Publisher(pubID)	  
+); 
+CREATE TABLE Writes( 
+	aID varchar(10) not null, 
+	bookID varchar(15) not null, 
+	primary key (aID, bookID), 
+	foreign key (aID) references Author(aID), 
+	foreign key (bookID) references Book(bookID) 
+); 
+CREATE TABLE bookCopy(
+	copyID varchar(15) primary key,
+	purchDtCopy date not null,
+	copyStatus varchar(15) not null check (copyStatus IN ('Available', 'On Loan')),
+	bookID varchar(15) not null,
+	foreign key (bookID) references Book (bookID) 
+);
+CREATE TABLE bookLoan(
+	loanID varchar(15) primary key,
+	checkoutDate date not null,
+	dueDate date not null check (checkoutDate < dueDate),
+	copyID varchar(15) not null, 
+	uID varchar(20) not null,
+	foreign key (copyID) references bookCopy (copyID),
+	foreign key (uID) references "User" (uID)
+);
+CREATE TABLE Fine(
+	fineID varchar(15) primary key,	 
+	fineAmount integer not null check (fineAmount > 0), 
+	fineDate date not null, 
+	reason varchar(15) not null check (reason IN ('Overdue', 'Damaged', 'Lost')), 
+	fineStatus varchar(15) not null, 
+	loanID varchar(15) not null unique, 
+	foreign key (loanID) references bookLoan (loanID) 
+); 
+CREATE TABLE Payment( 
+	payID varchar(10) primary key, 
+	payAmount decimal(8,2) not null check (payAmount > 0), 
+	payDate date not null, 
+	payType varchar(20) not null check (payType IN ('Cash', 'Credit', 'Debit')), 
+	uID varchar(20) not null,
+	fineID varchar(15) unique not null,
+	foreign key (uID) references "User" (uID),
+	foreign key (fineID) references Fine (fineID) 
+); 
+
+INSERT INTO "User" (uID, uFirstName, uLastName, uEmail, uPhone) VALUES
+('U001', 'John', 'McAdams', 'jmcadams@luc.edu', '355-111-1122'),
+('U002', 'Maria', 'Garcia', 'mgarcia@luc.edu', '555-222-2222'),
+('U003', 'David', 'Johnson', 'djohnson@luc.edu', '555-333-3333'),
+('U004', 'Emily', 'Brown', 'ebrown@luc.edu', '555-444-4444'),
+('U005', 'Michael', 'Lee', 'mlee@luc.edu', '555-555-5555'),
+('U006', 'Sophia', 'Martinez', 'smartinez@luc.edu', '555-666-1111'),
+('U007', 'James', 'Anderson', 'janderson@luc.edu', '555-777-2234'),
+('U008', 'Olivia', 'Thomas', 'othomas@luc.edu', '555-888-3333'),
+('U009', 'William', 'Taylor', 'wtaylor@luc.edu', '555-999-4444'),
+('U010', 'Ava', 'Hernandez', 'ahernandez@luc.edu', '555-000-5555'),
+('U011', 'Daniel', 'White', 'daniel.white@gmail.com', '555-101-1111'),
+('U012', 'Isabella', 'Lopez', 'ilopez@luc.edu', '555-102-2222'),
+('U013', 'Matthew', 'Clark', 'mclark@luc.edu', '555-103-3333'),
+('U014', 'Mia', 'Lewis', 'mlewis@luc.edu', '555-104-4444'),
+('U015', 'Christopher', 'Walker', 'cwalker@luc.edu', '555-105-5555'),
+('U016', 'Charlotte', 'Hall', 'chall@luc.edu', '555-106-6666'),
+('U017', 'Andrew', 'Allen', 'aallen@luc.edu', '555-107-7745'),
+('U018', 'Amelia', 'Young', 'ayoung@luc.edu', '555-108-8878'),
+('U019', 'Joshua', 'King', 'jking@luc.edu', '555-109-9945'),
+('U020', 'Harper', 'Scott', 'hscott@luc.edu', '555-110-0000');
+
+INSERT INTO Author(aID, aFirstName, aLastName) VALUES
+('A001','Harper','Lee'),
+('A002','Jane','Austen'),
+('A003','F. Scott','Fitzgerald'),
+('A004','George','Orwell'),
+('A005','J.K.','Rowling'),
+('A006','J.R.R.','Tolkien'),
+('A007','Margaret','Atwood'),
+('A008','Stephen','King'),
+('A009','Andy','Weir'),
+('A010','J.D.','Salinger'),
+('A011','Charlotte','Bronte'),
+('A012','Fyodor','Dostoevsky'),
+('A013','George R.R.','Martin'),
+('A014','Gillian','Flynn'),
+('A015','Donna','Tartt'),
+('A016','Colleen','Hoover'),
+('A017','Homer','Unknown'),
+('A018','Delia','Owens'),
+('A019','Alex','Michaelides'),
+('A020','James','Clear'),
+('A021','Paulo','Coelho'),
+('A022','Cormac','McCarthy'),
+('A023','Toni','Morrison'),
+('A024','Aldous','Huxley'),
+('A025','Robert','Pirsig'),
+('A026','John','Steinbeck'),
+('A027','Mark','Twain'),
+('A028','Emily','Bronte'),
+('A029','Charles','Dickens'),
+('A030','Leo','Tolstoy'),
+('A031','Ernest','Hemingway'),
+('A032','Virginia','Woolf'),
+('A033','Mary','Shelley'),
+('A034','Herman','Melville'),
+('A035','Oscar','Wilde'),
+('A036','Agatha','Christie'),
+('A037','Dan','Brown');
+
+INSERT INTO Publisher(pubID, pubName, pubAddress, pubWebsite, pubNumber) VALUES
+('P001', 'Penguin Random House', '1745 Broadway, New York, NY', 'https://www.penguinrandomhouse.com', '212-782-9000'),
+('P002', 'HarperCollins', '195 Broadway, New York, NY', 'https://www.harpercollins.com', '212-207-7000'),
+('P003', 'Oxford University Press', '198 Madison Ave, New York, NY', 'https://global.oup.com', '800-445-9714'),
+('P004', 'Scholastic', '557 Broadway, New York, NY', 'https://www.scholastic.com', '800-724-6527'),
+('P005', 'Houghton Mifflin Harcourt', '125 High Street, Boston, MA', 'https://www.hmhco.com', '800-225-5425'),
+('P006', 'Bloomsbury Publishing', '50 Bedford Square, London, UK', 'https://www.bloomsbury.com', '+44-20-7631-5600'),
+('P007', 'Vintage Books', '1745 Broadway, New York, NY', 'https://www.vintagebooks.com', '212-940-7390'),
+('P008', 'Simon & Schuster', '1230 Avenue of the Americas, New York, NY', 'https://www.simonandschuster.com', '212-698-7000'),
+('P009', 'Macmillan Publishers', '120 Broadway, New York, NY', 'https://us.macmillan.com', '646-307-5151'),
+('P010', 'Random House Trade Paperbacks', '1745 Broadway, New York, NY', 'https://www.randomhousebooks.com', '212-782-9000');
+
+INSERT INTO Book(bookID, bEdition, bISBN, bTitle, pubYear, pubID) VALUES
+('B000100','1st','9780143127741','The Martian',2014,'P001'),
+('B000101','1st','9780061120084','To Kill a Mockingbird',2006,'P002'),
+('B000102','1st','9780199535569','Pride and Prejudice',2008,'P003'),
+('B000103','2nd','9780307474278','The Great Gatsby',2010,'P001'),
+('B000104','1st','9780451524935','1984',2013,'P002'),
+('B000105','1st','9780743273565','The Catcher in the Rye',2009,'P003'),
+('B000106','3rd','9780439708180','Harry Potter and the Sorcerer''s Stone',2015,'P004'),
+('B000107','1st','9780618640157','The Hobbit',2007,'P005'),
+('B000108','2nd','9780141439600','Jane Eyre',2012,'P003'),
+('B000109','1st','9780679783275','Crime and Punishment',2011,'P001'),
+('B000110','1st','9780553380163','A Game of Thrones',2005,'P004'),
+('B000111','2nd','9780307588371','Gone Girl',2016,'P002'),
+('B000112','1st','9780385537858','The Goldfinch',2014,'P003'),
+('B000113','1st','9781501128035','It Ends With Us',2016,'P001'),
+('B000114','1st','9780316769488','The Catcher in the Rye Deluxe',2018,'P002'),
+('B000115','1st','9780140449136','The Odyssey',2003,'P003'),
+('B000116','1st','9780140449266','The Iliad',2004,'P003'),
+('B000117','2nd','9780525566151','Where the Crawdads Sing',2019,'P004'),
+('B000118','1st','9780316499019','The Silent Patient',2019,'P002'),
+('B000119','1st','9780735219090','Atomic Habits',2018,'P005'),
+('B000120','1st','9780062315007','The Alchemist',2014,'P001'),
+('B000121','1st','9780307387899','The Road',2007,'P002'),
+('B000122','1st','9781400032716','Beloved',2004,'P003'),
+('B000123','1st','9780812981605','The Handmaid''s Tale',2017,'P004'),
+('B000124','1st','9781501173219','The Outsider',2018,'P002'),
+('B000125','1st','9780590353427','Harry Potter and the Chamber of Secrets',1999,'P004'),
+('B000126','1st','9780060850524','Brave New World',2006,'P002'),
+('B000127','1st','9780385472579','Zen and the Art of Motorcycle Maintenance',1999,'P003'),
+('B000128','1st','9780345339683','The Fellowship of the Ring',2005,'P005'),
+('B000129','1st','9780345339713','The Two Towers',2005,'P005'),
+('B000130','1st','9780142437230','Of Mice and Men',2002,'P006'),
+('B000131','1st','9780486280615','Adventures of Huckleberry Finn',1994,'P007'),
+('B000132','1st','9780141439471','Wuthering Heights',2003,'P008'),
+('B000133','1st','9780486415864','Great Expectations',2001,'P009'),
+('B000134','1st','9780486260303','Anna Karenina',1998,'P010');
+
+INSERT INTO Writes(aID, bookID) VALUES
+('A009','B000100'),
+('A001','B000101'),
+('A002','B000102'),
+('A003','B000103'),
+('A004','B000104'),
+('A010','B000105'),
+('A005','B000106'),
+('A006','B000107'),
+('A011','B000108'),
+('A012','B000109'),
+('A013','B000110'),
+('A014','B000111'),
+('A015','B000112'),
+('A016','B000113'),
+('A010','B000114'),
+('A017','B000115'),
+('A017','B000116'),
+('A018','B000117'),
+('A019','B000118'),
+('A020','B000119'),
+('A021','B000120'),
+('A022','B000121'),
+('A023','B000122'),
+('A007','B000123'),
+('A008','B000124'),
+('A005','B000125'),
+('A024','B000126'),
+('A025','B000127'),
+('A006','B000128'),
+('A006','B000129'),
+('A026','B000130'),
+('A027','B000131'),
+('A028','B000132'),
+('A029','B000133'),
+('A030','B000134');
+
+INSERT INTO bookCopy(copyID, purchDtCopy, copyStatus, bookID) VALUES
+('CP0001', '2020-01-15', 'Available', 'B000100'),
+('CP0002', '2020-02-20', 'Available', 'B000104'),
+('CP0003', '2020-03-10', 'Available', 'B000107'),
+('CP0004', '2020-04-05', 'Available', 'B000101'),
+('CP0005', '2020-05-18', 'Available', 'B000110'),
+('CP0006', '2020-06-22', 'Available', 'B000103'),
+('CP0007', '2020-07-30', 'Available', 'B000115'),
+('CP0008', '2020-08-14', 'Available', 'B000100'),
+('CP0009', '2020-09-09', 'Available', 'B000112'),
+('CP0010', '2020-10-25', 'Available', 'B000108'),
+('CP0011', '2021-01-11', 'Available', 'B000120'),
+('CP0012', '2021-02-17', 'Available', 'B000101'),
+('CP0013', '2021-03-23', 'Available', 'B000106'),
+('CP0014', '2021-04-19', 'Available', 'B000118'),
+('CP0015', '2021-05-05', 'Available', 'B000109'),
+('CP0016', '2021-06-13', 'Available', 'B000114'),
+('CP0017', '2021-07-27', 'Available', 'B000117'),
+('CP0018', '2021-08-31', 'Available', 'B000102'),
+('CP0019', '2021-09-16', 'Available', 'B000111'),
+('CP0020', '2021-10-08', 'Available', 'B000125'),
+('CP0021', '2022-01-20', 'Available', 'B000107'),
+('CP0022', '2022-02-14', 'Available', 'B000103'),
+('CP0023', '2022-03-29', 'Available', 'B000119'),
+('CP0024', '2022-04-11', 'Available', 'B000121'),
+('CP0025', '2022-05-07', 'Available', 'B000128'),
+('CP0026', '2022-06-15', 'Available', 'B000100'),
+('CP0027', '2022-06-18', 'Available', 'B000100'),
+('CP0028', '2022-06-20', 'Available', 'B000101'),
+('CP0029', '2022-06-22', 'Available', 'B000103'),
+('CP0030', '2022-06-25', 'Available', 'B000106'),
+('CP0031', '2022-06-28', 'Available', 'B000107'),
+('CP0032', '2022-07-01', 'Available', 'B000107'),
+('CP0033', '2022-07-03', 'Available', 'B000108'),
+('CP0034', '2022-07-05', 'Available', 'B000109'),
+('CP0035', '2022-07-08', 'Available', 'B000111'),
+('CP0036', '2022-07-10', 'Available', 'B000117'),
+('CP0037', '2022-07-12', 'Available', 'B000119'),
+('CP0038', '2022-07-15', 'Available', 'B000128'),
+('CP0039', '2022-07-18', 'Available', 'B000106'),
+('CP0040', '2022-07-20', 'Available', 'B000100'),
+('CP0041', '2022-08-01', 'Available', 'B000100'),
+('CP0042', '2022-08-03', 'On Loan',   'B000100'),
+('CP0043', '2022-08-05', 'Available', 'B000101'),
+('CP0044', '2022-08-07', 'On Loan',   'B000101'),
+('CP0045', '2022-08-09', 'Available', 'B000103'),
+('CP0046', '2022-08-11', 'On Loan',   'B000103'),
+('CP0047', '2022-08-13', 'Available', 'B000106'),
+('CP0048', '2022-08-15', 'On Loan',   'B000106'),
+('CP0049', '2022-08-17', 'Available', 'B000107'),
+('CP0050', '2022-08-19', 'On Loan',   'B000107'),
+('CP0051', '2022-08-21', 'Available', 'B000108'),
+('CP0052', '2022-08-23', 'On Loan',   'B000108'),
+('CP0053', '2022-08-25', 'Available', 'B000109'),
+('CP0054', '2022-08-27', 'On Loan',   'B000109'),
+('CP0055', '2022-08-29', 'Available', 'B000111'),
+('CP0056', '2022-08-31', 'On Loan',   'B000111'),
+('CP0057', '2022-09-02', 'Available', 'B000117'),
+('CP0058', '2022-09-04', 'On Loan',   'B000117'),
+('CP0059', '2022-09-06', 'Available', 'B000119'),
+('CP0060', '2022-09-08', 'On Loan',   'B000119'),
+('CP0061', '2022-09-10', 'Available', 'B000128'),
+('CP0062', '2022-09-12', 'On Loan',   'B000128'),
+('CP0063', '2022-09-14', 'Available', 'B000104'),
+('CP0064', '2022-09-16', 'On Loan',   'B000104'),
+('CP0065', '2022-09-18', 'Available', 'B000118'),
+('CP0066', '2022-09-20', 'On Loan',   'B000118'),
+('CP0067', '2022-09-22', 'Available', 'B000121'),
+('CP0068', '2022-09-24', 'On Loan',   'B000121'),
+('CP0069', '2022-09-26', 'Available', 'B000125'),
+('CP0070', '2022-09-28', 'On Loan',   'B000125'),
+('CP0071', '2026-01-20', 'On Loan', 'B000100'),
+('CP0072', '2026-01-22', 'On Loan', 'B000100'),
+('CP0073', '2026-01-25', 'On Loan', 'B000107'),
+('CP0074', '2026-01-27', 'On Loan', 'B000106'),
+('CP0075', '2026-01-29', 'On Loan', 'B000103'),
+('CP0076', '2026-02-01', 'On Loan', 'B000111'),
+('CP0077', '2026-02-03', 'On Loan', 'B000119'),
+('CP0078', '2026-02-05', 'On Loan', 'B000128'),
+('CP0079', '2026-02-07', 'On Loan', 'B000100'),
+('CP0080', '2026-02-09', 'On Loan', 'B000107'),
+('CP0081', '2026-02-11', 'Available', 'B000129'),
+('CP0082', '2026-02-13', 'Available', 'B000129'),
+('CP0083', '2026-02-15', 'Available', 'B000130'),
+('CP0084', '2026-02-17', 'Available', 'B000130'),
+('CP0085', '2026-02-19', 'Available', 'B000131'),
+('CP0086', '2026-02-21', 'Available', 'B000131'),
+('CP0087', '2026-02-23', 'Available', 'B000132'),
+('CP0088', '2026-02-25', 'Available', 'B000132'),
+('CP0089', '2026-02-27', 'Available', 'B000133'),
+('CP0090', '2026-03-01', 'Available', 'B000133'),
+('CP0091', '2026-03-03', 'Available', 'B000134'),
+('CP0092', '2026-03-05', 'Available', 'B000134');
+
+INSERT INTO bookLoan(loanID, checkoutDate, dueDate, copyID, uID) VALUES
+('LN000001', '2020-01-15', '2020-02-15', 'CP0001', 'U001'),
+('LN000002', '2020-02-20', '2020-03-20', 'CP0002', 'U002'),
+('LN000003', '2020-03-10', '2020-04-10', 'CP0003', 'U003'),
+('LN000004', '2020-04-05', '2020-05-05', 'CP0004', 'U004'),
+('LN000005', '2020-05-18', '2020-06-18', 'CP0005', 'U005'),
+('LN000006', '2020-06-22', '2020-07-22', 'CP0006', 'U006'),
+('LN000007', '2020-07-30', '2020-08-30', 'CP0007', 'U007'),
+('LN000008', '2020-08-14', '2020-09-14', 'CP0008', 'U008'),
+('LN000009', '2020-09-09', '2020-10-09', 'CP0009', 'U009'),
+('LN000010', '2020-10-25', '2020-11-25', 'CP0010', 'U010'),
+('LN000011', '2021-01-11', '2021-02-11', 'CP0011', 'U011'),
+('LN000012', '2021-02-17', '2021-03-17', 'CP0012', 'U012'),
+('LN000013', '2021-03-23', '2021-04-23', 'CP0013', 'U013'),
+('LN000014', '2021-04-19', '2021-05-19', 'CP0014', 'U014'),
+('LN000015', '2021-05-05', '2021-06-05', 'CP0015', 'U015'),
+('LN000016', '2021-06-13', '2021-07-13', 'CP0016', 'U016'),
+('LN000017', '2021-07-27', '2021-08-27', 'CP0017', 'U017'),
+('LN000018', '2021-08-31', '2021-09-30', 'CP0018', 'U018'),
+('LN000019', '2021-09-16', '2021-10-16', 'CP0019', 'U019'),
+('LN000020', '2021-10-08', '2021-11-08', 'CP0020', 'U020'),
+('LN000021', '2022-01-20', '2022-02-20', 'CP0021', 'U001'),
+('LN000022', '2022-02-14', '2022-03-14', 'CP0022', 'U002'),
+('LN000023', '2022-03-29', '2022-04-29', 'CP0023', 'U003'),
+('LN000024', '2022-04-11', '2022-05-11', 'CP0024', 'U004'),
+('LN000025', '2022-05-07', '2022-06-07', 'CP0025', 'U005'),
+('LN000026', '2022-06-15', '2022-07-15', 'CP0026', 'U006'),
+('LN000027', '2022-06-18', '2022-07-18', 'CP0027', 'U007'),
+('LN000028', '2022-06-20', '2022-07-20', 'CP0028', 'U008'),
+('LN000029', '2022-06-22', '2022-07-22', 'CP0029', 'U009'),
+('LN000030', '2022-06-25', '2022-07-25', 'CP0030', 'U010'),
+('LN000031', '2022-06-28', '2022-07-28', 'CP0031', 'U011'),
+('LN000032', '2022-07-01', '2022-08-01', 'CP0032', 'U012'),
+('LN000033', '2022-07-03', '2022-08-03', 'CP0033', 'U013'),
+('LN000034', '2022-07-05', '2022-08-05', 'CP0034', 'U014'),
+('LN000035', '2022-07-08', '2022-08-08', 'CP0035', 'U015'),
+('LN000036', '2022-07-10', '2022-08-10', 'CP0036', 'U016'),
+('LN000037', '2022-07-12', '2022-08-12', 'CP0037', 'U017'),
+('LN000038', '2022-07-15', '2022-08-15', 'CP0038', 'U018'),
+('LN000039', '2022-07-18', '2022-08-18', 'CP0039', 'U019'),
+('LN000040', '2022-07-20', '2022-08-20', 'CP0040', 'U020'),
+('LN000041', '2026-02-10', '2026-02-24', 'CP0042', 'U003'),
+('LN000042', '2026-02-12', '2026-02-26', 'CP0044', 'U004'),
+('LN000043', '2026-02-15', '2026-03-01', 'CP0046', 'U005'),
+('LN000044', '2026-02-18', '2026-03-04', 'CP0048', 'U006'),
+('LN000045', '2026-02-20', '2026-03-06', 'CP0050', 'U007'),
+('LN000046', '2026-02-22', '2026-03-08', 'CP0052', 'U008'),
+('LN000047', '2026-02-25', '2026-03-11', 'CP0054', 'U009'),
+('LN000048', '2026-02-27', '2026-03-13', 'CP0056', 'U010'),
+('LN000049', '2026-03-01', '2026-03-15', 'CP0058', 'U011'),
+('LN000050', '2026-03-03', '2026-03-17', 'CP0060', 'U012'),
+('LN000051', '2026-03-05', '2026-03-19', 'CP0062', 'U013'),
+('LN000052', '2026-03-07', '2026-03-21', 'CP0064', 'U014'),
+('LN000053', '2026-03-09', '2026-03-23', 'CP0066', 'U015'),
+('LN000054', '2026-03-11', '2026-03-25', 'CP0068', 'U016'),
+('LN000055', '2026-03-13', '2026-03-27', 'CP0070', 'U017'),
+('LN000056', '2026-03-02', '2026-03-16', 'CP0071', 'U018'),
+('LN000057', '2026-03-04', '2026-03-18', 'CP0072', 'U019'),
+('LN000058', '2026-03-05', '2026-03-19', 'CP0073', 'U020'),
+('LN000059', '2026-03-06', '2026-03-20', 'CP0074', 'U001'),
+('LN000060', '2026-03-07', '2026-03-21', 'CP0075', 'U002'),
+('LN000061', '2026-03-08', '2026-03-22', 'CP0076', 'U003'),
+('LN000062', '2026-03-09', '2026-03-23', 'CP0077', 'U004'),
+('LN000063', '2026-03-10', '2026-03-24', 'CP0078', 'U005'),
+('LN000064', '2026-03-11', '2026-03-25', 'CP0079', 'U006'),
+('LN000065', '2026-03-12', '2026-03-26', 'CP0080', 'U007');
+
+INSERT INTO Fine(fineID, fineAmount, fineDate, reason, fineStatus, loanID) VALUES
+('FN000001', 5,  '2020-02-20', 'Overdue', 'Paid',   'LN000001'),
+('FN000002', 10, '2020-03-25', 'Overdue', 'Paid',   'LN000002'),
+('FN000003', 15, '2020-05-10', 'Damaged', 'Paid',   'LN000004'),
+('FN000004', 5,  '2020-06-23', 'Overdue', 'Paid',   'LN000005'),
+('FN000005', 20, '2020-07-27', 'Lost',    'Paid',   'LN000006'),
+('FN000006', 5,  '2020-09-04', 'Overdue', 'Paid',   'LN000007'),
+('FN000007', 10, '2020-10-14', 'Overdue', 'Paid',   'LN000009'),
+('FN000008', 25, '2020-11-30', 'Damaged', 'Paid',   'LN000010'),
+('FN000009', 5,  '2021-02-16', 'Overdue', 'Paid',   'LN000011'),
+('FN000010', 10, '2021-03-22', 'Overdue', 'Paid',   'LN000012'),
+('FN000011', 15, '2021-05-24', 'Damaged', 'Paid',   'LN000014'),
+('FN000012', 5,  '2021-06-10', 'Overdue', 'Unpaid', 'LN000015'),
+('FN000013', 10, '2021-09-01', 'Overdue', 'Unpaid', 'LN000017'),
+('FN000014', 5,  '2021-10-05', 'Overdue', 'Paid',   'LN000018'),
+('FN000015', 20, '2021-10-21', 'Lost',    'Unpaid', 'LN000019');
+
+INSERT INTO Payment (payID, payAmount, payDate, payType, uID, fineID) VALUES
+('PAY001', 5.00,  '2020-02-25', 'Cash',   'U001', 'FN000001'),
+('PAY002', 10.00, '2020-03-30', 'Credit', 'U002', 'FN000002'),
+('PAY003', 15.00, '2020-05-15', 'Debit',  'U004', 'FN000003'),
+('PAY004', 5.00,  '2020-06-28', 'Credit', 'U005', 'FN000004'),
+('PAY005', 20.00, '2020-08-01', 'Cash',   'U006', 'FN000005'),
+('PAY006', 5.00,  '2020-09-10', 'Debit',  'U007', 'FN000006'),
+('PAY007', 10.00, '2020-10-18', 'Credit', 'U009', 'FN000007'),
+('PAY008', 25.00, '2020-12-05', 'Debit',  'U010', 'FN000008'),
+('PAY009', 5.00,  '2021-02-20', 'Debit',  'U011', 'FN000009'),
+('PAY010', 10.00, '2021-03-28', 'Credit', 'U012', 'FN000010'),
+('PAY011', 15.00, '2021-05-30', 'Credit', 'U014', 'FN000011'),
+('PAY012', 5.00,  '2021-10-10', 'Debit',  'U018', 'FN000014');
+
+
+
+SELECT B.bookID, B.bTitle, COUNT (DISTINCT BC.copyID) AS NumCopiesOnLoan
+FROM Book B, bookCopy BC, bookLoan BL
+WHERE B.bookID = BC.bookID AND BC.copyID = BL.copyID AND BC.CopyStatus = 'On Loan'
+GROUP BY B.bookID, B.bTitle
+ORDER BY NumCopiesOnLoan DESC LIMIT 10;
+
+
+
+SELECT 
+    u.uFirstName, u.uLastName,
+    COUNT(f.fineID) AS total_fines,
+    SUM(f.fineAmount) AS total_fine_amount
+FROM "User" u, bookLoan bl, Fine f
+WHERE u.uID = bl.uID
+AND bl.loanID = f.loanID
+GROUP BY u.uFirstName, u.uLastName
+ORDER BY total_fine_amount DESC;
+
+
+
+SELECT  u.uFirstName, u.uLastName,
+COUNT(bl.loanID) AS total_books_borrowed
+FROM "User" u, bookLoan bl, bookCopy bc
+WHERE u.uID = bl.uID AND bl.copyID = bc.copyID
+GROUP BY u.uFirstName, u.uLastName
+ORDER BY total_books_borrowed DESC
+LIMIT 10;
+
+
+
+SELECT
+p.pubID,
+  p.pubName,
+COUNT(DISTINCT b.bookID) AS num_books_published,
+COUNT(bc.copyID) AS total_library_copies
+FROM Publisher p
+JOIN Book b
+ON p.pubID = b.pubID
+JOIN bookCopy bc
+ON b.bookID = bc.bookID
+GROUP BY p.pubID, p.pubName
+ORDER BY total_library_copies DESC, p.pubName ASC
+LIMIT 10;
+
+
+
+SELECT DISTINCT u.uID,
+      u.uFirstName,
+      u.uLastName,
+      u.uEmail,
+      u.uPhone,
+      p.payAmount
+FROM "User" u
+JOIN Payment p 
+    ON u.uID = p.uID
+WHERE p.payType IN ('Debit', 'Credit')
+ORDER BY p.payAmount ASC LIMIT 10;
+
+
+
